@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Brique par Brique</title>
+  <meta name="description" content="Peu d'habitudes, un plan clair, une brique par jour.">
+  <meta name="theme-color" content="#2b211c">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Briques">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="top">
+    <h1>Brique par Brique</h1>
+    <p id="date" class="date"></p>
+  </header>
+
+  <main>
+    <!-- Aujourd'hui -->
+    <section id="view-today" class="view">
+      <div id="today-empty" class="empty" hidden>
+        <h2>Un mur se construit une brique à la fois.</h2>
+        <p>Choisis une habitude, donne-lui un plan clair, et pose une brique chaque jour où tu la fais. Chaque brique vaut 1 % du mur.</p>
+        <button class="btn primary" data-action="new-habit">Créer ma première habitude</button>
+      </div>
+
+      <div id="today-content" hidden>
+        <section class="wall-card" aria-live="polite">
+          <div class="wall-head">
+            <div>
+              <h2 id="wall-title"></h2>
+              <p id="wall-sub" class="muted"></p>
+            </div>
+            <div id="wall-pct" class="pct"></div>
+          </div>
+          <div class="wall-wrap">
+            <div id="wall" class="wall" role="img"></div>
+          </div>
+          <p id="wall-msg" class="msg"></p>
+          <dl class="stats">
+            <div><dt>Série</dt><dd id="stat-streak"></dd></div>
+            <div><dt>Constance 30 j</dt><dd id="stat-rate"></dd></div>
+            <div><dt>Briques</dt><dd id="stat-total"></dd></div>
+          </dl>
+        </section>
+
+        <h2 class="section-title">Aujourd'hui</h2>
+        <ul id="habit-list" class="habits"></ul>
+      </div>
+    </section>
+
+    <!-- Plan -->
+    <section id="view-plan" class="view" hidden>
+      <h2 class="section-title">Mon plan</h2>
+      <p class="muted lead">Trois habitudes au maximum. Mieux vaut un petit geste tenu chaque jour qu'une longue liste abandonnée.</p>
+      <ul id="plan-list" class="plan"></ul>
+      <button id="add-habit" class="btn primary block" data-action="new-habit">Ajouter une habitude</button>
+      <p id="plan-full" class="muted center" hidden>Tu as tes 3 habitudes. Termine un mur avant d'en ajouter une autre.</p>
+    </section>
+
+    <!-- Réglages -->
+    <section id="view-settings" class="view" hidden>
+      <h2 class="section-title">Rappels</h2>
+      <div class="card">
+        <p id="notif-status"></p>
+        <div class="row-btns">
+          <button id="notif-enable" class="btn primary" hidden>Activer les notifications</button>
+          <button id="notif-test" class="btn" hidden>Envoyer un test</button>
+        </div>
+        <p class="muted small">L'heure de chaque rappel se règle dans le plan de l'habitude. Les notifications partent quand l'application est ouverte ou encore en arrière-plan ; une fois l'application complètement fermée, le téléphone peut les retarder ou les ignorer.</p>
+        <hr>
+        <p><strong>Rappel garanti par le calendrier</strong></p>
+        <p class="muted small">Pour un rappel qui sonne même application fermée, ajoute tes habitudes à l'agenda du téléphone : une alarme quotidienne à l'heure prévue.</p>
+        <button id="ics-export" class="btn">Ajouter à mon calendrier</button>
+      </div>
+
+      <h2 class="section-title">Installation</h2>
+      <div class="card">
+        <p id="install-status"></p>
+        <button id="install-btn" class="btn primary" hidden>Installer l'application</button>
+        <div id="install-help">
+          <p><strong>Android (Chrome)</strong> : menu ⋮ → « Ajouter à l'écran d'accueil » ou « Installer l'application ».</p>
+          <p><strong>iPhone (Safari)</strong> : bouton Partager → « Sur l'écran d'accueil » → Ajouter.</p>
+        </div>
+      </div>
+
+      <h2 class="section-title">Mes données</h2>
+      <div class="card">
+        <p class="muted small">Tout est enregistré sur ce téléphone uniquement. Fais une sauvegarde de temps en temps.</p>
+        <div class="row-btns">
+          <button id="data-export" class="btn">Exporter</button>
+          <button id="data-import" class="btn">Importer</button>
+          <input id="data-file" type="file" accept="application/json,.json" hidden>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <nav class="tabs" aria-label="Navigation">
+    <button data-tab="today" class="active">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h8v5H3zM13 5h8v5h-8zM3 12h4v5H3zM9 12h8v5H9zM19 12h2v5h-2z"/></svg>
+      <span>Aujourd'hui</span>
+    </button>
+    <button data-tab="plan">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h2v2H4zM9 5h11v2H9zM4 11h2v2H4zM9 11h11v2H9zM4 17h2v2H4zM9 17h11v2H9z"/></svg>
+      <span>Plan</span>
+    </button>
+    <button data-tab="settings">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 0-6 6v4l-2 3v1h16v-1l-2-3V9a6 6 0 0 0-6-6zm-2 16a2 2 0 0 0 4 0z"/></svg>
+      <span>Rappels</span>
+    </button>
+  </nav>
+
+  <!-- Formulaire d'habitude -->
+  <dialog id="habit-dialog">
+    <form id="habit-form" method="dialog">
+      <h2 id="habit-form-title">Nouvelle habitude</h2>
+      <label>Mon habitude
+        <input name="name" required maxlength="40" placeholder="Lire 10 pages" autocomplete="off">
+      </label>
+      <label>Quand, précisément ?
+        <input name="cue" maxlength="60" placeholder="Après le café du matin" autocomplete="off">
+        <span class="hint">Accroche-la à un moment qui existe déjà dans ta journée.</span>
+      </label>
+      <label>Version minimum
+        <input name="mini" maxlength="60" placeholder="Lire une seule page" autocomplete="off">
+        <span class="hint">Les jours difficiles, ceci suffit pour poser la brique.</span>
+      </label>
+      <label>Heure du rappel (facultatif)
+        <input name="time" type="time">
+      </label>
+      <fieldset>
+        <legend>Couleur des briques</legend>
+        <div id="color-choices" class="colors"></div>
+      </fieldset>
+      <div class="form-actions">
+        <button type="button" id="habit-delete" class="btn danger" hidden>Supprimer</button>
+        <span class="spacer"></span>
+        <button type="button" id="habit-cancel" class="btn">Annuler</button>
+        <button type="submit" class="btn primary">Enregistrer</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" hidden></div>
+  <script src="app.js"></script>
+</body>
+</html>
