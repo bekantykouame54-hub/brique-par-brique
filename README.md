@@ -5,6 +5,7 @@ Application de suivi d'habitudes, installable sur l'écran d'accueil (PWA).
 - **Peu d'habitudes** : trois au maximum.
 - **Un plan clair** : pour chacune, *quand* précisément, et une *version minimum* pour les jours difficiles.
 - **Un mur de 100 briques** : chaque jour tenu pose une brique, soit 1 % du mur. Série en cours et constance sur 30 jours.
+- **Argent** : entrées réparties en trois caisses (Dépenser 50 %, Épargner 30 %, Investir 20 %), dépenses notées par caisse, objectif d'épargne, bilan de la semaine.
 - **Rappels** : notification à l'heure choisie, plus un export vers le calendrier du téléphone.
 - Fonctionne hors connexion ; les données restent sur l'appareil (export / import en JSON).
 

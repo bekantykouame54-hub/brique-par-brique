@@ -1,5 +1,5 @@
 /* Brique par Brique — service worker : hors-ligne + rappels */
-const CACHE = 'bpb-static-v1';
+const CACHE = 'bpb-static-v2';
 const DATA = 'bpb-data';
 const ASSETS = [
   './', './index.html', './styles.css', './app.js', './manifest.webmanifest',

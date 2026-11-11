@@ -6,6 +6,7 @@
   const MAX_HABITS = 3;
   const WALL = 100; // briques par mur
   const COLORS = ['#c2553a', '#d39a3a', '#56708a', '#6b8f5e'];
+  const BOXES = { spend: 'Dépenser', save: 'Épargner', invest: 'Investir' };
   const $ = (s) => document.querySelector(s);
 
   /* ---------- Dates ---------- */
@@ -24,6 +25,7 @@
   }
   let state = load();
   state.notified ||= {};
+  state.money = cleanMoney(state.money);
   let currentDay = dateKey();
 
   function save() {
@@ -319,6 +321,171 @@
     if (e.target.closest('[data-action="new-habit"]')) openForm();
   });
 
+  /* ---------- Argent : trois caisses 50 / 30 / 20 ---------- */
+  const fcfa = (n) => `${Math.round(n).toLocaleString('fr-FR')} F`;
+
+  // Valide des données d'argent venues du stockage ou d'une sauvegarde importée.
+  function cleanMoney(m) {
+    const tx = Array.isArray(m?.tx) ? m.tx : [];
+    const goal = m?.goal;
+    return {
+      tx: tx
+        .filter((t) => t && (t.type === 'in' || t.type === 'out') && Number.isFinite(t.amount) && t.amount > 0)
+        .map((t, i) => ({
+          id: String(t.id || `t${i}`),
+          type: t.type,
+          amount: Math.round(t.amount),
+          cat: String(t.cat || 'Autre').slice(0, 30),
+          box: t.box in BOXES ? t.box : 'spend',
+          note: String(t.note || '').slice(0, 60),
+          at: Number.isFinite(t.at) ? t.at : Date.now(),
+        })),
+      goal: goal && typeof goal.name === 'string' && goal.amount > 0
+        ? { name: goal.name.slice(0, 40), amount: Math.round(goal.amount) }
+        : null,
+    };
+  }
+
+  // Chaque entrée est répartie 50 / 30 / 20 ; chaque dépense sort de la caisse choisie.
+  function balances() {
+    const b = { spend: 0, save: 0, invest: 0 };
+    for (const t of state.money.tx) {
+      if (t.type === 'in') {
+        const spend = Math.round(t.amount * 0.5);
+        const save = Math.round(t.amount * 0.3);
+        b.spend += spend; b.save += save; b.invest += t.amount - spend - save;
+      } else {
+        b[t.box] -= t.amount;
+      }
+    }
+    return b;
+  }
+
+  let moneyType = 'out';
+  const moneyForm = $('#money-form');
+  const mf = moneyForm.elements;
+
+  function renderMoney() {
+    const b = balances();
+    $('#money-total').textContent = fcfa(b.spend + b.save + b.invest);
+    for (const k of Object.keys(BOXES)) {
+      const el = $(`#box-${k}`);
+      el.textContent = fcfa(b[k]);
+      el.classList.toggle('neg', b[k] < 0);
+    }
+
+    document.querySelectorAll('.segmented button').forEach((btn) => btn.setAttribute('aria-pressed', String(btn.dataset.type === moneyType)));
+    $('#money-out-fields').hidden = moneyType === 'in';
+
+    // Objectif d'épargne, rempli par la caisse Épargner
+    const goal = state.money.goal;
+    const pct = goal ? Math.max(0, Math.min(100, Math.round((b.save / goal.amount) * 100))) : 0;
+    $('#goal-title').textContent = goal ? goal.name : 'Aucun objectif pour l\'instant';
+    $('#goal-bar').style.width = `${pct}%`;
+    $('#goal-bar').parentElement.setAttribute('aria-valuenow', pct);
+    $('#goal-sub').textContent = !goal
+      ? 'Choisis une chose précise et un montant. Ta caisse Épargner la remplit.'
+      : pct >= 100
+        ? `Objectif atteint : ${fcfa(goal.amount)} dans ta caisse Épargner.`
+        : `${fcfa(Math.max(0, b.save))} sur ${fcfa(goal.amount)} · ${pct} % · il reste ${fcfa(goal.amount - Math.max(0, b.save))}.`;
+    $('#goal-clear').hidden = !goal;
+
+    // Bilan de la semaine (du lundi au dimanche)
+    const now = new Date();
+    const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - ((now.getDay() + 6) % 7)).getTime();
+    let weekIn = 0, weekOut = 0;
+    for (const t of state.money.tx) {
+      if (t.at < monday) continue;
+      if (t.type === 'in') weekIn += t.amount; else weekOut += t.amount;
+    }
+    $('#week-in').textContent = fcfa(weekIn);
+    $('#week-out').textContent = fcfa(weekOut);
+
+    // Derniers mouvements
+    const list = $('#tx-list');
+    list.replaceChildren();
+    const recent = [...state.money.tx].sort((a, z) => z.at - a.at).slice(0, 15);
+    $('#tx-empty').hidden = recent.length > 0;
+    for (const t of recent) {
+      const li = document.createElement('li');
+      const what = document.createElement('div');
+      what.className = 'what';
+      what.textContent = t.type === 'in' ? 'Entrée' : t.cat;
+      const when = document.createElement('span');
+      when.className = 'when';
+      const day = new Date(t.at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+      when.textContent = [day, t.type === 'out' && BOXES[t.box], t.note].filter(Boolean).join(' · ');
+      what.append(when);
+      const amount = document.createElement('span');
+      amount.className = 'amount' + (t.type === 'in' ? ' pos' : '');
+      amount.textContent = `${t.type === 'in' ? '+' : '−'} ${fcfa(t.amount)}`;
+      const del = document.createElement('button');
+      del.type = 'button';
+      del.className = 'del';
+      del.textContent = '×';
+      del.setAttribute('aria-label', `Supprimer : ${what.firstChild.textContent} ${fcfa(t.amount)}`);
+      del.addEventListener('click', () => {
+        if (!confirm('Supprimer ce mouvement ?')) return;
+        state.money.tx = state.money.tx.filter((x) => x !== t);
+        save();
+        renderMoney();
+      });
+      li.append(what, amount, del);
+      list.append(li);
+    }
+  }
+
+  document.querySelectorAll('.segmented button').forEach((btn) => btn.addEventListener('click', () => {
+    moneyType = btn.dataset.type;
+    renderMoney();
+  }));
+
+  moneyForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const amount = Math.round(Number(mf.amount.value));
+    if (!(amount > 0)) { mf.amount.focus(); return toast('Indique un montant.'); }
+    const box = mf.box.value;
+    if (moneyType === 'out') {
+      const left = balances()[box];
+      if (amount > left) return toast(`La caisse ${BOXES[box]} n'a que ${fcfa(Math.max(0, left))}.`);
+    }
+    state.money.tx.push({
+      id: Date.now().toString(36), type: moneyType, amount,
+      cat: moneyType === 'out' ? mf.cat.value : 'Entrée',
+      box: moneyType === 'out' ? box : 'spend',
+      note: mf.note.value.trim(), at: Date.now(),
+    });
+    save();
+    mf.amount.value = '';
+    mf.note.value = '';
+    renderMoney();
+    toast(moneyType === 'in' ? `+ ${fcfa(amount)} répartis dans tes trois caisses.` : `− ${fcfa(amount)} noté.`);
+  });
+
+  const goalForm = $('#goal-form');
+  goalForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const name = goalForm.elements.name.value.trim();
+    const amount = Math.round(Number(goalForm.elements.amount.value));
+    if (!name || !(amount > 0)) return toast('Indique l\'objectif et son montant.');
+    state.money.goal = { name, amount };
+    save();
+    $('#goal-details').open = false;
+    renderMoney();
+  });
+  $('#goal-details').addEventListener('toggle', (e) => {
+    if (!e.target.open) return;
+    goalForm.elements.name.value = state.money.goal?.name || '';
+    goalForm.elements.amount.value = state.money.goal?.amount || '';
+  });
+  $('#goal-clear').addEventListener('click', () => {
+    if (!confirm('Retirer cet objectif ?')) return;
+    state.money.goal = null;
+    save();
+    $('#goal-details').open = false;
+    renderMoney();
+  });
+
   /* ---------- Rappels ---------- */
   const canNotify = 'Notification' in window && 'serviceWorker' in navigator;
   const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
@@ -466,6 +633,7 @@
         })),
         notified: {},
         selected: null,
+        money: cleanMoney(data.money),
       };
       save();
       renderAll();
@@ -493,7 +661,7 @@
 
   /* ---------- Navigation, divers ---------- */
   function showTab(tab) {
-    for (const v of ['today', 'plan', 'settings']) $(`#view-${v}`).hidden = v !== tab;
+    for (const v of ['today', 'money', 'plan', 'settings']) $(`#view-${v}`).hidden = v !== tab;
     document.querySelectorAll('.tabs button').forEach((b) => {
       const on = b.dataset.tab === tab;
       b.classList.toggle('active', on);
@@ -516,6 +684,7 @@
     $('#date').textContent = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
     renderToday();
     renderPlan();
+    renderMoney();
     renderSettings();
   }
 

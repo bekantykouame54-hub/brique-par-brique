@@ -55,6 +55,100 @@
       </div>
     </section>
 
+    <!-- Argent -->
+    <section id="view-money" class="view" hidden>
+      <h2 class="money-title">Ton argent</h2>
+      <p class="money-total"><strong id="money-total"></strong> <span class="muted">en tout</span></p>
+      <p class="muted">Chaque franc noté est un franc maîtrisé.</p>
+
+      <form id="money-form" class="card money-card" novalidate>
+        <h3 class="eyebrow">Noter en 5 secondes</h3>
+        <div class="segmented" role="group" aria-label="Type de mouvement">
+          <button type="button" data-type="in" aria-pressed="false">Entrée</button>
+          <button type="button" data-type="out" aria-pressed="true">Dépense</button>
+        </div>
+        <label>Montant (FCFA)
+          <input name="amount" type="number" inputmode="numeric" min="1" step="1" placeholder="Ex. 1000" autocomplete="off">
+        </label>
+        <div id="money-out-fields" class="two-cols">
+          <label>Pour quoi
+            <select name="cat">
+              <option>Nourriture</option>
+              <option>Transport</option>
+              <option>Internet</option>
+              <option>Études</option>
+              <option>Petits plaisirs</option>
+              <option>Urgence</option>
+              <option>Objectif</option>
+              <option>Investissement</option>
+              <option>Autre</option>
+            </select>
+          </label>
+          <label>Payé avec
+            <select name="box">
+              <option value="spend">Dépenser</option>
+              <option value="save">Épargner</option>
+              <option value="invest">Investir</option>
+            </select>
+          </label>
+        </div>
+        <label>Note (facultatif)
+          <input name="note" maxlength="60" placeholder="Ex. taxi pour le campus" autocomplete="off">
+        </label>
+        <button type="submit" class="btn primary block big">Enregistrer</button>
+      </form>
+
+      <section class="card money-card">
+        <h3 class="eyebrow">Tes trois caisses</h3>
+        <div class="box">
+          <div class="box-head"><span><strong>Dépenser</strong> <small>50 %</small></span><strong id="box-spend"></strong></div>
+          <p class="muted small"><strong>Pour vivre aujourd'hui.</strong> Nourriture, transport, internet, petits plaisirs. Quand cette caisse est vide, tu arrêtes de dépenser. Tu ne touches jamais aux deux autres pour ça.</p>
+        </div>
+        <div class="box">
+          <div class="box-head"><span><strong>Épargner</strong> <small>30 %</small></span><strong id="box-save"></strong></div>
+          <p class="muted small"><strong>Pour te protéger et atteindre ton objectif.</strong> C'est ton bouclier contre les imprévus (téléphone cassé, urgence) : il t'évite d'emprunter ou de demander. Tu n'y touches que pour une vraie urgence ou pour ton objectif.</p>
+        </div>
+        <div class="box">
+          <div class="box-head"><span><strong>Investir</strong> <small>20 %</small></span><strong id="box-invest"></strong></div>
+          <p class="muted small"><strong>Pour gagner plus demain.</strong> C'est l'argent qui travaille pour toi : Djassa (nom de domaine, hébergement), une formation, un outil. Jamais pour consommer. L'épargne te protège, l'investissement te fait grandir.</p>
+        </div>
+      </section>
+
+      <section class="card money-card">
+        <h3 class="eyebrow">Ton objectif d'épargne</h3>
+        <p id="goal-title" class="goal-title"></p>
+        <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-labelledby="goal-title"><div id="goal-bar"></div></div>
+        <p id="goal-sub" class="muted small"></p>
+        <details id="goal-details">
+          <summary>Fixer ou modifier l'objectif</summary>
+          <form id="goal-form" novalidate>
+            <label>Ce que je veux
+              <input name="name" maxlength="40" placeholder="Ex. un ordinateur portable" autocomplete="off">
+            </label>
+            <label>Montant (FCFA)
+              <input name="amount" type="number" inputmode="numeric" min="1" step="1" placeholder="Ex. 150000" autocomplete="off">
+            </label>
+            <div class="row-btns">
+              <button type="submit" class="btn primary">Enregistrer l'objectif</button>
+              <button type="button" id="goal-clear" class="btn danger" hidden>Retirer</button>
+            </div>
+          </form>
+        </details>
+      </section>
+
+      <section class="card money-card">
+        <h3 class="eyebrow">Bilan de la semaine</h3>
+        <div class="line"><span>Entré</span><strong id="week-in" class="pos"></strong></div>
+        <div class="line"><span>Sorti</span><strong id="week-out"></strong></div>
+      </section>
+
+      <section class="card money-card">
+        <h3 class="eyebrow">Derniers mouvements</h3>
+        <ul id="tx-list" class="tx"></ul>
+        <p id="tx-empty" class="muted small">Aucun mouvement pour l'instant. Note ta première entrée ci-dessus.</p>
+      </section>
+    </section>
+
     <!-- Plan -->
     <section id="view-plan" class="view" hidden>
       <h2 class="section-title">Mon plan</h2>
@@ -106,6 +200,10 @@
     <button data-tab="today" class="active">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h8v5H3zM13 5h8v5h-8zM3 12h4v5H3zM9 12h8v5H9zM19 12h2v5h-2z"/></svg>
       <span>Aujourd'hui</span>
+    </button>
+    <button data-tab="money">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v12H3zm2 2v8h14V8zm7 1.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5z" fill-rule="evenodd"/></svg>
+      <span>Argent</span>
     </button>
     <button data-tab="plan">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h2v2H4zM9 5h11v2H9zM4 11h2v2H4zM9 11h11v2H9zM4 17h2v2H4zM9 17h11v2H9z"/></svg>
